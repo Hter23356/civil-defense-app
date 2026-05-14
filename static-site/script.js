@@ -8,6 +8,63 @@ const fallbackRegions = [
   'Херсонська область',
 ];
 
+const regionAliases = new Map([
+  ['Київ', 'Київ'],
+  ['м. Київ', 'Київ'],
+  ['Київська', 'Київська область'],
+  ['Київська обл', 'Київська область'],
+  ['Київська область', 'Київська область'],
+  ['Вінницька', 'Вінницька область'],
+  ['Вінницька область', 'Вінницька область'],
+  ['Волинська', 'Волинська область'],
+  ['Волинська область', 'Волинська область'],
+  ['Дніпропетровська', 'Дніпропетровська область'],
+  ['Дніпропетровська область', 'Дніпропетровська область'],
+  ['Донецька', 'Донецька область'],
+  ['Донецька область', 'Донецька область'],
+  ['Житомирська', 'Житомирська область'],
+  ['Житомирська область', 'Житомирська область'],
+  ['Закарпатська', 'Закарпатська область'],
+  ['Закарпатська область', 'Закарпатська область'],
+  ['Запорізька', 'Запорізька область'],
+  ['Запорізька область', 'Запорізька область'],
+  ['Івано-Франківська', 'Івано-Франківська область'],
+  ['Івано-Франківська область', 'Івано-Франківська область'],
+  ['Кіровоградська', 'Кіровоградська область'],
+  ['Кіровоградська область', 'Кіровоградська область'],
+  ['Луганська', 'Луганська область'],
+  ['Луганська область', 'Луганська область'],
+  ['Львівська', 'Львівська область'],
+  ['Львівська область', 'Львівська область'],
+  ['Миколаївська', 'Миколаївська область'],
+  ['Миколаївська область', 'Миколаївська область'],
+  ['Одеська', 'Одеська область'],
+  ['Одеська область', 'Одеська область'],
+  ['Полтавська', 'Полтавська область'],
+  ['Полтавська область', 'Полтавська область'],
+  ['Рівненська', 'Рівненська область'],
+  ['Рівненська область', 'Рівненська область'],
+  ['Сумська', 'Сумська область'],
+  ['Сумська область', 'Сумська область'],
+  ['Тернопільська', 'Тернопільська область'],
+  ['Тернопільська область', 'Тернопільська область'],
+  ['Харківська', 'Харківська область'],
+  ['Харківська область', 'Харківська область'],
+  ['Херсонська', 'Херсонська область'],
+  ['Херсонська область', 'Херсонська область'],
+  ['Хмельницька', 'Хмельницька область'],
+  ['Хмельницька область', 'Хмельницька область'],
+  ['Черкаська', 'Черкаська область'],
+  ['Черкаська область', 'Черкаська область'],
+  ['Чернівецька', 'Чернівецька область'],
+  ['Чернівецька область', 'Чернівецька область'],
+  ['Чернігівська', 'Чернігівська область'],
+  ['Чернігівська область', 'Чернігівська область'],
+  ['Автономна Республіка Крим', 'Автономна Республіка Крим'],
+]);
+
+let regionsGeoJson = null;
+
 let shelters = [
   { name: 'Метро Хрещатик', address: 'Хрещатик, 1', city: 'Київ', region: 'Київ', lat: 50.447, lng: 30.522, capacity: null, type: 'Метро', description: 'Станція метро у центрі міста.' },
   { name: 'Метро Майдан Незалежності', address: 'Майдан Незалежності', city: 'Київ', region: 'Київ', lat: 50.45, lng: 30.524, capacity: null, type: 'Метро', description: 'Станція метро з кількома входами.' },
@@ -32,19 +89,26 @@ let updates = [
 const state = {
   region: localStorage.getItem('civil-defense-region') || 'all',
   city: localStorage.getItem('civil-defense-city') || 'all',
+  shelterType: localStorage.getItem('civil-defense-shelter-type') || 'all',
   section: localStorage.getItem('civil-defense-section') || 'all',
   map: null,
+  alertMap: null,
+  alertRegionLayer: null,
   markers: [],
   userMarker: null,
   userLocation: null,
+  userRegion: localStorage.getItem('civil-defense-user-region') || '',
   dataLoadedAt: null,
 };
 
 const elements = {
   regionFilter: document.querySelector('#region-filter'),
   cityFilter: document.querySelector('#city-filter'),
+  shelterTypeFilter: document.querySelector('#shelter-type-filter'),
   sectionFilter: document.querySelector('#section-filter'),
   alertsList: document.querySelector('#alerts-list'),
+  alertMapSummary: document.querySelector('#alert-map-summary'),
+  checkMyRegion: document.querySelector('#check-my-region'),
   sheltersList: document.querySelector('#shelters-list'),
   medicalList: document.querySelector('#medical-list'),
   updatesList: document.querySelector('#updates-list'),
@@ -66,6 +130,7 @@ const elements = {
 function savePreferences() {
   localStorage.setItem('civil-defense-region', state.region);
   localStorage.setItem('civil-defense-city', state.city);
+  localStorage.setItem('civil-defense-shelter-type', state.shelterType);
   localStorage.setItem('civil-defense-section', state.section);
 }
 
@@ -89,18 +154,74 @@ function formatDate(value) {
   });
 }
 
+function normalizeRegionName(value = '') {
+  const cleaned = String(value)
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\bобл\.?\b/gi, 'область')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned) {
+    return '';
+  }
+
+  if (regionAliases.has(cleaned)) {
+    return regionAliases.get(cleaned);
+  }
+
+  const withoutRegionWord = cleaned.replace(/\s+область$/i, '').trim();
+  if (regionAliases.has(withoutRegionWord)) {
+    return regionAliases.get(withoutRegionWord);
+  }
+
+  return cleaned;
+}
+
+function getActiveRegionSet() {
+  return new Set(alerts
+    .filter((alert) => alert.active)
+    .map((alert) => normalizeRegionName(alert.region || alert.location))
+    .filter(Boolean));
+}
+
 function getRegions() {
-  return unique([...fallbackRegions, ...alerts.map((alert) => alert.region)]);
+  return unique([...fallbackRegions, ...alerts.map((alert) => normalizeRegionName(alert.region))]);
 }
 
 function getFilteredAlerts() {
-  return alerts.filter((alert) => state.region === 'all' || alert.region === state.region || alert.location === state.region);
+  return alerts.filter((alert) => {
+    const region = normalizeRegionName(alert.region || alert.location);
+    return state.region === 'all' || region === state.region || alert.location === state.region;
+  });
+}
+
+function getShelterCategory(shelter) {
+  const text = `${shelter.type || ''} ${shelter.name || ''} ${shelter.description || ''}`.toLowerCase();
+
+  if (/метро|станц/.test(text)) {
+    return 'metro';
+  }
+
+  if (/подвійного призначення|подвійне призначення|споруди подвійного/.test(text)) {
+    return 'dual';
+  }
+
+  if (/паркінг|підзем|підвал/.test(text)) {
+    return 'underground';
+  }
+
+  if (/найпрост/.test(text)) {
+    return 'simple';
+  }
+
+  return 'other';
 }
 
 function getFilteredShelters() {
   return shelters.filter((shelter) => {
     const cityMatches = state.city === 'all' || shelter.city === state.city;
-    return cityMatches;
+    const typeMatches = state.shelterType === 'all' || getShelterCategory(shelter) === state.shelterType;
+    return cityMatches && typeMatches;
   });
 }
 
@@ -120,6 +241,13 @@ function fillCityFilter() {
   state.city = elements.cityFilter.value;
 }
 
+function fillShelterTypeFilter() {
+  elements.shelterTypeFilter.value = [...elements.shelterTypeFilter.options].some((option) => option.value === state.shelterType)
+    ? state.shelterType
+    : 'all';
+  state.shelterType = elements.shelterTypeFilter.value;
+}
+
 function setupControls() {
   elements.regionFilter.addEventListener('change', () => {
     state.region = elements.regionFilter.value;
@@ -129,6 +257,12 @@ function setupControls() {
 
   elements.cityFilter.addEventListener('change', () => {
     state.city = elements.cityFilter.value;
+    savePreferences();
+    render();
+  });
+
+  elements.shelterTypeFilter.addEventListener('change', () => {
+    state.shelterType = elements.shelterTypeFilter.value;
     savePreferences();
     render();
   });
@@ -143,6 +277,7 @@ function setupControls() {
   document.querySelector('#reset-filters').addEventListener('click', () => {
     state.region = 'all';
     state.city = 'all';
+    state.shelterType = 'all';
     state.section = 'all';
     savePreferences();
     render();
@@ -156,6 +291,7 @@ function setupControls() {
 
   document.querySelector('#locate-me').addEventListener('click', findNearestShelter);
   document.querySelector('#hero-locate').addEventListener('click', findNearestShelter);
+  elements.checkMyRegion.addEventListener('click', findNearestShelter);
   elements.modalLocate.addEventListener('click', () => {
     hideAlertModal();
     findNearestShelter();
@@ -181,6 +317,15 @@ function setupMap() {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(state.map);
+
+  state.alertMap = L.map('ukraine-alert-map', {
+    attributionControl: false,
+    scrollWheelZoom: false,
+    zoomControl: false,
+  }).setView([49.0, 31.3], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    opacity: 0.18,
+  }).addTo(state.alertMap);
 }
 
 function renderSummary() {
@@ -221,6 +366,63 @@ function renderAlerts() {
       <span class="badge ${alert.active ? 'red' : 'green'}">${alert.active ? 'Активна' : 'Завершена'}</span>
     </article>
   `).join('');
+}
+
+function getRegionFromFeature(feature) {
+  return normalizeRegionName(feature?.properties?.ADM1_UA || feature?.properties?.name || feature?.properties?.NAME);
+}
+
+function getAlertMapStyle(feature) {
+  const activeRegions = getActiveRegionSet();
+  const region = getRegionFromFeature(feature);
+  const active = activeRegions.has(region);
+  const isUserRegion = state.userRegion && region === state.userRegion;
+
+  return {
+    color: isUserRegion ? '#1d4ed8' : '#ffffff',
+    weight: isUserRegion ? 3 : 1,
+    opacity: 1,
+    fillColor: active ? '#dc2626' : '#dbeafe',
+    fillOpacity: active ? 0.82 : 0.52,
+    className: active ? 'alert-region-active' : '',
+  };
+}
+
+function renderAlertMap() {
+  if (!state.alertMap || !regionsGeoJson) {
+    return;
+  }
+
+  if (state.alertRegionLayer) {
+    state.alertRegionLayer.remove();
+  }
+
+  const activeRegions = getActiveRegionSet();
+  state.alertRegionLayer = L.geoJSON(regionsGeoJson, {
+    style: getAlertMapStyle,
+    onEachFeature: (feature, layer) => {
+      const region = getRegionFromFeature(feature);
+      const regionAlerts = alerts.filter((alert) => alert.active && normalizeRegionName(alert.region || alert.location) === region);
+      layer.bindPopup(`<strong>${region}</strong><br>${regionAlerts.length ? `Активних повідомлень: ${regionAlerts.length}` : 'Активних тривог не знайдено'}`);
+      layer.on('click', () => {
+        state.region = region;
+        savePreferences();
+        render();
+        document.querySelector('#alerts-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      if (activeRegions.has(region)) {
+        layer.getElement()?.classList.add('alert-region-active');
+      }
+    },
+  }).addTo(state.alertMap);
+
+  state.alertMap.fitBounds(state.alertRegionLayer.getBounds(), { padding: [12, 12] });
+
+  const activeList = [...activeRegions].sort((a, b) => a.localeCompare(b, 'uk'));
+  const userText = state.userRegion ? ` Ваш регіон: ${state.userRegion}.` : ' Натисніть "Перевірити мій регіон", щоб звірити тривогу з вашою геолокацією.';
+  elements.alertMapSummary.textContent = activeList.length
+    ? `Зараз підсвічено: ${activeList.join(', ')}.${userText}`
+    : `За поточними повідомленнями активних областей не знайдено.${userText}`;
 }
 
 function badgeClass(type = '') {
@@ -328,8 +530,35 @@ function getGoogleRouteUrl(shelter) {
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-function showAlertModalIfNeeded(activeCount) {
-  if (activeCount <= 0) {
+function playSoftAlertSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) {
+      return;
+    }
+
+    const audio = new AudioContext();
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(620, audio.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(420, audio.currentTime + 0.16);
+    gain.gain.setValueAtTime(0.0001, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.06, audio.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.22);
+    oscillator.connect(gain).connect(audio.destination);
+    oscillator.start();
+    oscillator.stop(audio.currentTime + 0.24);
+  } catch (error) {
+    // Browsers can block sound before user interaction; the visual alert still works.
+  }
+}
+
+function showAlertModalForRegion(region) {
+  const normalizedRegion = normalizeRegionName(region);
+  const activeRegionAlerts = alerts.filter((alert) => alert.active && normalizeRegionName(alert.region || alert.location) === normalizedRegion);
+
+  if (!normalizedRegion || !activeRegionAlerts.length) {
     return;
   }
 
@@ -337,11 +566,62 @@ function showAlertModalIfNeeded(activeCount) {
     return;
   }
 
+  const latestAlert = activeRegionAlerts[0];
+  document.querySelector('#alert-modal-title').textContent = `Тривога у вашому регіоні: ${normalizedRegion}`;
+  document.querySelector('#alert-modal-text').textContent = latestAlert?.description || 'Є активне сповіщення у вашому регіоні. Можна швидко знайти найближче укриття та побудувати маршрут.';
   elements.alertModal.classList.remove('hidden');
+  playSoftAlertSound();
 }
 
 function hideAlertModal() {
   elements.alertModal.classList.add('hidden');
+}
+
+function isPointInRing(point, ring) {
+  const x = point.lng;
+  const y = point.lat;
+  let inside = false;
+
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const xi = ring[i][0];
+    const yi = ring[i][1];
+    const xj = ring[j][0];
+    const yj = ring[j][1];
+    const intersects = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi);
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+}
+
+function isPointInPolygon(point, polygon) {
+  if (!polygon?.length || !isPointInRing(point, polygon[0])) {
+    return false;
+  }
+
+  return !polygon.slice(1).some((hole) => isPointInRing(point, hole));
+}
+
+function getRegionByLocation(location) {
+  if (!regionsGeoJson?.features?.length || !location) {
+    return '';
+  }
+
+  for (const feature of regionsGeoJson.features) {
+    const geometry = feature.geometry;
+    if (!geometry) {
+      continue;
+    }
+
+    const polygons = geometry.type === 'MultiPolygon' ? geometry.coordinates : [geometry.coordinates];
+    if (polygons.some((polygon) => isPointInPolygon(location, polygon))) {
+      return getRegionFromFeature(feature);
+    }
+  }
+
+  return '';
 }
 
 function renderNearest(nearest) {
@@ -375,8 +655,14 @@ function findNearestShelter() {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
     };
+    state.userRegion = getRegionByLocation(state.userLocation);
+    if (state.userRegion) {
+      localStorage.setItem('civil-defense-user-region', state.userRegion);
+      showAlertModalForRegion(state.userRegion);
+    }
 
     const nearest = shelters
+      .filter((shelter) => state.shelterType === 'all' || getShelterCategory(shelter) === state.shelterType)
       .map((shelter) => ({ ...shelter, distance: distanceKm(state.userLocation, shelter) }))
       .sort((a, b) => a.distance - b.distance)[0];
 
@@ -404,6 +690,7 @@ function findNearestShelter() {
 
     renderNearest(nearest);
     renderShelters();
+    renderAlertMap();
     document.querySelector('#shelters').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, () => {
     window.alert('Дозвольте доступ до геолокації, щоб знайти найближче укриття.');
@@ -421,11 +708,25 @@ async function fetchJson(url) {
   return response.json();
 }
 
+async function loadRegions() {
+  try {
+    const data = await fetchJson('/api/regions');
+    if (data.regions?.features?.length) {
+      return data.regions;
+    }
+  } catch (error) {
+    console.warn('Live regions API unavailable, using bundled map data.');
+  }
+
+  return fetchJson('./data/ukraine-regions.geojson');
+}
+
 async function loadLiveData() {
-  const [sheltersResult, alertsResult, newsResult] = await Promise.allSettled([
+  const [sheltersResult, alertsResult, newsResult, regionsResult] = await Promise.allSettled([
     fetchJson('/api/shelters'),
     fetchJson('/api/alerts'),
     fetchJson('/api/news'),
+    loadRegions(),
   ]);
 
   if (sheltersResult.status === 'fulfilled' && Array.isArray(sheltersResult.value.shelters)) {
@@ -445,22 +746,31 @@ async function loadLiveData() {
     }));
   }
 
+  if (regionsResult.status === 'fulfilled' && regionsResult.value?.features?.length) {
+    regionsGeoJson = regionsResult.value;
+  }
+
   state.dataLoadedAt = new Date().toISOString();
   fillRegionFilter();
   fillCityFilter();
+  fillShelterTypeFilter();
   render();
+  if (state.userRegion) {
+    showAlertModalForRegion(state.userRegion);
+  }
 }
 
 function render() {
   fillRegionFilter();
   fillCityFilter();
+  fillShelterTypeFilter();
   renderSummary();
   renderAlerts();
   renderShelters();
   renderMap();
+  renderAlertMap();
   renderUpdates();
   renderSections();
-  showAlertModalIfNeeded(getFilteredAlerts().filter((alert) => alert.active).length);
 }
 
 setupControls();

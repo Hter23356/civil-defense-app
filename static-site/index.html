@@ -73,6 +73,16 @@
           <select id="city-filter"></select>
         </div>
         <div class="field">
+          <label for="shelter-type-filter">Тип укриття</label>
+          <select id="shelter-type-filter">
+            <option value="all">Усі типи</option>
+            <option value="metro">Метро</option>
+            <option value="dual">Подвійного призначення</option>
+            <option value="simple">Найпростіші укриття</option>
+            <option value="underground">Підземні та паркінги</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="section-filter">Показати</label>
           <select id="section-filter">
             <option value="all">Всі розділи</option>
@@ -113,6 +123,15 @@
             <h2>Активні тривоги</h2>
           </div>
           <p>Останні повідомлення з каналу єТривога. Статус формується за найсвіжішим повідомленням для локації.</p>
+        </div>
+        <div class="alert-map-layout">
+          <div id="ukraine-alert-map"></div>
+          <aside class="alert-map-panel">
+            <span class="badge red">Карта тривог</span>
+            <h3>Області з активними сповіщеннями</h3>
+            <p id="alert-map-summary">Завантажуємо карту областей України.</p>
+            <button id="check-my-region" class="secondary-action" type="button">Перевірити мій регіон</button>
+          </aside>
         </div>
         <div id="alerts-list" class="alert-list"></div>
       </section>
