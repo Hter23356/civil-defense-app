@@ -3,107 +3,162 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f172a" />
-    <meta name="description" content="Система цивільного захисту: укриття, тривоги, перша допомога та оновлення." />
-    <title>Система цивільного захисту</title>
+    <meta name="theme-color" content="#0b1220" />
+    <meta name="description" content="Актуальні тривоги, укриття Києва, геолокація найближчого укриття та новини Повітряних Сил ЗСУ." />
+    <title>єЗахист | Тривоги та укриття</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">Civil Defense</p>
-        <h1>Система цивільного захисту</h1>
-        <p class="lead">Укриття, активні тривоги, перша допомога та важливі оновлення в одному місці.</p>
-      </div>
-      <div class="status-pill">
-        <span class="pulse"></span>
-        <span id="header-status">2 активні тривоги</span>
-      </div>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="На головну">
+        <span class="brand-mark">З</span>
+        <span>
+          <strong>єЗахист</strong>
+          <small>Київ та актуальні сповіщення</small>
+        </span>
+      </a>
+      <nav class="quick-nav" aria-label="Основні розділи">
+        <button type="button" data-jump="alerts">Тривоги</button>
+        <button type="button" data-jump="shelters">Укриття</button>
+        <button type="button" data-jump="medical">Допомога</button>
+        <button type="button" data-jump="updates">Новини</button>
+      </nav>
     </header>
 
-    <main>
-      <section class="controls-band" aria-label="Фільтри">
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Оперативна панель</p>
+          <h1>Тривоги, укриття та важливі оновлення в одному місці</h1>
+          <p class="lead">Сайт показує останні сповіщення з єТривога, новини Повітряних Сил ЗСУ та допомагає знайти найближче укриття на карті Києва.</p>
+          <div class="hero-actions">
+            <button id="hero-locate" class="primary-action" type="button">Знайти найближче укриття</button>
+            <button class="secondary-action" type="button" data-jump="alerts">Перевірити тривоги</button>
+          </div>
+        </div>
+        <aside class="status-panel" aria-live="polite">
+          <div class="status-row">
+            <span id="status-dot" class="status-dot"></span>
+            <div>
+              <strong id="header-status">Оновлення даних</strong>
+              <small id="status-subtitle">Завантажуємо актуальні сповіщення</small>
+            </div>
+          </div>
+          <div class="status-metrics">
+            <div>
+              <strong id="active-alerts-count">0</strong>
+              <span>активні</span>
+            </div>
+            <div>
+              <strong id="shelters-count">0</strong>
+              <span>укриття</span>
+            </div>
+            <div>
+              <strong>103</strong>
+              <span>медична</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="toolbar" aria-label="Фільтри та швидкі дії">
         <div class="field">
-          <label for="region-filter">Регіон</label>
+          <label for="region-filter">Регіон тривог</label>
           <select id="region-filter"></select>
         </div>
         <div class="field">
-          <label for="city-filter">Місто</label>
+          <label for="city-filter">Місто укриттів</label>
           <select id="city-filter"></select>
         </div>
         <div class="field">
-          <label for="section-filter">Розділ</label>
+          <label for="section-filter">Показати</label>
           <select id="section-filter">
             <option value="all">Всі розділи</option>
             <option value="alerts">Тривоги</option>
             <option value="shelters">Укриття</option>
             <option value="medical">Перша допомога</option>
-            <option value="updates">Оновлення</option>
+            <option value="updates">Новини</option>
           </select>
         </div>
-        <div class="field">
-          <label for="locate-me">Геолокація</label>
-          <button id="locate-me" type="button">Знайти найближче укриття</button>
-        </div>
+        <button id="locate-me" class="locate-action" type="button">Найближче укриття</button>
       </section>
 
-      <section class="summary-grid" aria-label="Коротка статистика">
+      <section class="insight-strip" aria-label="Коротко">
         <article>
-          <strong id="active-alerts-count">0</strong>
-          <span>активні тривоги</span>
+          <span>Останнє оновлення</span>
+          <strong id="last-updated">щойно</strong>
         </article>
         <article>
-          <strong id="shelters-count">0</strong>
-          <span>укриттів у вибірці</span>
-        </article>
-        <article>
+          <span>Місць в укриттях</span>
           <strong id="capacity-count">0</strong>
-          <span>місць в укриттях</span>
         </article>
         <article>
-          <strong>103</strong>
-          <span>екстрена медична допомога</span>
+          <span>Джерело тривог</span>
+          <strong id="alerts-source">єТривога</strong>
+        </article>
+        <article>
+          <span>Новини</span>
+          <strong>ПС ЗСУ</strong>
         </article>
       </section>
 
-      <section class="content-section" data-section="alerts">
+      <section id="nearest-panel" class="nearest-panel hidden" aria-live="polite"></section>
+
+      <section class="content-section" data-section="alerts" id="alerts">
         <div class="section-heading">
-          <h2>Тривоги</h2>
-          <p>Демо-сповіщення з фільтрацією за регіоном.</p>
+          <div>
+            <p class="section-kicker">Поточна ситуація</p>
+            <h2>Активні тривоги</h2>
+          </div>
+          <p>Останні повідомлення з каналу єТривога. Статус формується за найсвіжішим повідомленням для локації.</p>
         </div>
-        <div id="alerts-list" class="list-stack"></div>
+        <div id="alerts-list" class="alert-list"></div>
       </section>
 
-      <section class="content-section" data-section="shelters">
+      <section class="content-section map-section" data-section="shelters" id="shelters">
         <div class="section-heading">
-          <h2>Карта укриттів</h2>
-          <p>Оберіть регіон або місто, щоб звузити список.</p>
+          <div>
+            <p class="section-kicker">Карта Києва</p>
+            <h2>Укриття поруч</h2>
+          </div>
+          <p>Дозвольте геолокацію, щоб побачити найближче укриття та відстань до нього.</p>
         </div>
-        <div id="map"></div>
-        <div id="shelters-list" class="cards-grid"></div>
+        <div class="map-layout">
+          <div id="map"></div>
+          <div class="map-side">
+            <h3>Найближчі укриття</h3>
+            <div id="shelters-list" class="shelter-list"></div>
+          </div>
+        </div>
       </section>
 
-      <section class="content-section" data-section="medical">
+      <section class="content-section" data-section="medical" id="medical">
         <div class="section-heading">
-          <h2>Перша допомога</h2>
-          <p>Короткі інструкції для найпоширеніших екстрених ситуацій.</p>
+          <div>
+            <p class="section-kicker">Перші дії</p>
+            <h2>Перша допомога</h2>
+          </div>
+          <p>Короткі алгоритми для ситуацій, де важлива швидкість і спокій.</p>
         </div>
         <div id="medical-list" class="accordion-list"></div>
       </section>
 
-      <section class="content-section" data-section="updates">
+      <section class="content-section" data-section="updates" id="updates">
         <div class="section-heading">
-          <h2>Оновлення</h2>
-          <p>Інформаційна стрічка застосунку.</p>
+          <div>
+            <p class="section-kicker">Офіційна стрічка</p>
+            <h2>Новини Повітряних Сил</h2>
+          </div>
+          <p>Останні публікації з офіційного Telegram-каналу Повітряних Сил ЗСУ.</p>
         </div>
-        <div id="updates-list" class="list-stack"></div>
+        <div id="updates-list" class="news-list"></div>
       </section>
     </main>
 
-    <footer>
-      <span>Демо-сайт працює без сервера та бази даних.</span>
+    <footer class="footer">
+      <span>Дані оновлюються автоматично під час відкриття сторінки.</span>
       <button id="reset-filters" type="button">Скинути фільтри</button>
     </footer>
 

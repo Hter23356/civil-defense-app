@@ -1,40 +1,32 @@
-const regions = [
+const fallbackRegions = [
+  'Київ',
   'Київська область',
   'Харківська область',
-  'Львівська область',
-  'Одеська область',
   'Дніпропетровська область',
+  'Запорізька область',
+  'Миколаївська область',
+  'Херсонська область',
 ];
 
 let shelters = [
-  { name: 'Метро Хрещатик', address: 'Хрещатик, 1', city: 'Київ', region: 'Київська область', lat: 50.447, lng: 30.522, capacity: 500, type: 'Метро', description: 'Центральна станція метро у середмісті.' },
-  { name: 'Метро Майдан Незалежності', address: 'Майдан Незалежності', city: 'Київ', region: 'Київська область', lat: 50.45, lng: 30.524, capacity: 600, type: 'Метро', description: 'Станція метро з кількома входами.' },
-  { name: 'Підземний паркінг Globus', address: 'Майдан Незалежності, 1', city: 'Київ', region: 'Київська область', lat: 50.449, lng: 30.524, capacity: 300, type: 'Підземне', description: 'Підземний паркінг торгового центру.' },
-  { name: 'Метро Університет', address: 'майдан Свободи', city: 'Харків', region: 'Харківська область', lat: 50.004, lng: 36.232, capacity: 400, type: 'Метро', description: 'Станція харківського метро.' },
-  { name: 'Підвал школи №15', address: 'вул. Сумська, 45', city: 'Харків', region: 'Харківська область', lat: 50.002, lng: 36.23, capacity: 150, type: 'Будівля', description: 'Укриття у підвальному приміщенні.' },
-  { name: 'Підземний перехід Площа Ринок', address: 'Площа Ринок', city: 'Львів', region: 'Львівська область', lat: 49.842, lng: 24.032, capacity: 200, type: 'Підземне', description: 'Підземний перехід у центрі міста.' },
-  { name: 'Паркінг Victoria Gardens', address: 'вул. Кульпарківська, 226А', city: 'Львів', region: 'Львівська область', lat: 49.807, lng: 23.978, capacity: 250, type: 'Підземне', description: 'Підземний паркінг торгового центру.' },
-  { name: 'Метро Центральна', address: 'Вокзальна площа', city: 'Дніпро', region: 'Дніпропетровська область', lat: 48.477, lng: 35.015, capacity: 500, type: 'Метро', description: 'Станція метро біля вокзалу.' },
-  { name: 'Підвал адмінбудівлі', address: 'пр. Дмитра Яворницького, 1', city: 'Дніпро', region: 'Дніпропетровська область', lat: 48.459, lng: 35.039, capacity: 100, type: 'Будівля', description: 'Укриття в адміністративній будівлі.' },
-  { name: 'Підземний паркінг Arkadia', address: 'вул. Генуезька, 24Д', city: 'Одеса', region: 'Одеська область', lat: 46.444, lng: 30.755, capacity: 350, type: 'Підземне', description: 'Підземний паркінг торгового центру.' },
+  { name: 'Метро Хрещатик', address: 'Хрещатик, 1', city: 'Київ', region: 'Київ', lat: 50.447, lng: 30.522, capacity: null, type: 'Метро', description: 'Станція метро у центрі міста.' },
+  { name: 'Метро Майдан Незалежності', address: 'Майдан Незалежності', city: 'Київ', region: 'Київ', lat: 50.45, lng: 30.524, capacity: null, type: 'Метро', description: 'Станція метро з кількома входами.' },
+  { name: 'Підземний паркінг Globus', address: 'Майдан Незалежності, 1', city: 'Київ', region: 'Київ', lat: 50.449, lng: 30.524, capacity: null, type: 'Підземне', description: 'Підземний паркінг торгового центру.' },
 ];
 
 let alerts = [
-  { region: 'Київська область', type: 'Повітряна тривога', active: true, start: '2026-05-14T09:15:00.000Z', description: 'Повітряна тривога. Пройдіть до найближчого укриття.' },
-  { region: 'Харківська область', type: 'БПЛА', active: true, start: '2026-05-14T08:40:00.000Z', description: 'Зафіксовано активність БПЛА. Залишайтеся в укритті.' },
-  { region: 'Львівська область', type: 'Відбій', active: false, start: '2026-05-13T21:10:00.000Z', end: '2026-05-13T21:45:00.000Z', description: 'Тривогу завершено.' },
+  { region: 'Київ', location: 'Київ', type: 'Повітряна тривога', active: true, start: new Date().toISOString(), description: 'Очікуємо актуальні дані з каналу єТривога.', url: 'https://t.me/UkraineAlarmSignal' },
 ];
 
 const medical = [
-  { title: 'Зупинка кровотечі', category: 'Кровотеча', steps: ['Натисніть на рану чистою тканиною або стерильною серветкою.', 'Тримайте прямий тиск 10-15 хвилин.', 'Підніміть поранену частину тіла вище рівня серця, якщо це можливо.', 'При сильній кровотечі викличте швидку допомогу за номером 103.'] },
-  { title: 'Перша допомога при переломах', category: 'Перелом', steps: ['Не переміщуйте постраждалого без потреби.', 'Зафіксуйте ушкоджену кінцівку в тому положенні, у якому вона є.', 'Прикладіть холод через тканину.', 'Не намагайтеся вправити кістку самостійно.'] },
-  { title: 'Допомога при опіках', category: 'Опік', steps: ['Припиніть дію джерела опіку.', 'Охолоджуйте опік прохолодною проточною водою 10-20 хвилин.', 'Не наносіть масло, крем або мазь на свіжий опік.', 'При великих опіках негайно зверніться до лікаря.'] },
-  { title: 'Серцево-легенева реанімація', category: 'СЛР', steps: ['Перевірте свідомість і дихання.', 'Попросіть когось викликати 103.', 'Робіть 30 натискань на грудну клітку з темпом 100-120 на хвилину.', 'Продовжуйте до прибуття медиків або появи ознак життя.'] },
+  { title: 'Кровотеча', category: 'Перші хвилини', steps: ['Натисніть на рану чистою тканиною або стерильною серветкою.', 'Тримайте прямий тиск 10-15 хвилин.', 'Якщо можливо, підніміть поранену частину тіла вище рівня серця.', 'При сильній кровотечі телефонуйте 103.'] },
+  { title: 'Опік', category: 'Охолодження', steps: ['Припиніть дію джерела опіку.', 'Охолоджуйте опік прохолодною проточною водою 10-20 хвилин.', 'Не наносіть масло або крем на свіжий опік.', 'При великих опіках або опіках обличчя зверніться до лікаря.'] },
+  { title: 'Перелом', category: 'Фіксація', steps: ['Не переміщуйте постраждалого без потреби.', 'Зафіксуйте ушкоджену кінцівку в поточному положенні.', 'Прикладіть холод через тканину.', 'Не намагайтеся вправити кістку самостійно.'] },
+  { title: 'Серцево-легенева реанімація', category: '103', steps: ['Перевірте свідомість і дихання.', 'Попросіть когось викликати 103.', 'Робіть 30 натискань на грудну клітку з темпом 100-120 на хвилину.', 'Продовжуйте до прибуття медиків або появи ознак життя.'] },
 ];
 
 let updates = [
-  { text: 'У демо-сайті доступна карта укриттів, тривоги, інструкції першої допомоги та оновлення.', date: '2026-05-14T09:00:00.000Z' },
-  { text: 'Ця версія не потребує сервера, бази даних або платного web service.', date: '2026-05-14T08:30:00.000Z' },
+  { text: 'Останні новини Повітряних Сил завантажуються.', date: new Date().toISOString(), url: 'https://t.me/kpszsu' },
 ];
 
 const state = {
@@ -44,11 +36,28 @@ const state = {
   map: null,
   markers: [],
   userMarker: null,
+  userLocation: null,
+  dataLoadedAt: null,
 };
 
-const regionFilter = document.querySelector('#region-filter');
-const cityFilter = document.querySelector('#city-filter');
-const sectionFilter = document.querySelector('#section-filter');
+const elements = {
+  regionFilter: document.querySelector('#region-filter'),
+  cityFilter: document.querySelector('#city-filter'),
+  sectionFilter: document.querySelector('#section-filter'),
+  alertsList: document.querySelector('#alerts-list'),
+  sheltersList: document.querySelector('#shelters-list'),
+  medicalList: document.querySelector('#medical-list'),
+  updatesList: document.querySelector('#updates-list'),
+  activeAlertsCount: document.querySelector('#active-alerts-count'),
+  sheltersCount: document.querySelector('#shelters-count'),
+  capacityCount: document.querySelector('#capacity-count'),
+  headerStatus: document.querySelector('#header-status'),
+  statusSubtitle: document.querySelector('#status-subtitle'),
+  statusDot: document.querySelector('#status-dot'),
+  lastUpdated: document.querySelector('#last-updated'),
+  alertsSource: document.querySelector('#alerts-source'),
+  nearestPanel: document.querySelector('#nearest-panel'),
+};
 
 function savePreferences() {
   localStorage.setItem('civil-defense-region', state.region);
@@ -56,33 +65,73 @@ function savePreferences() {
   localStorage.setItem('civil-defense-section', state.section);
 }
 
-function option(value, label) {
+function createOption(value, label) {
   const item = document.createElement('option');
   item.value = value;
   item.textContent = label;
   return item;
 }
 
-function setupFilters() {
-  regionFilter.append(option('all', 'Всі регіони'));
-  regions.forEach((region) => regionFilter.append(option(region, region)));
-  cityFilter.append(option('all', 'Всі міста'));
+function unique(values) {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'uk'));
+}
 
-  regionFilter.addEventListener('change', () => {
-    state.region = regionFilter.value;
-    state.city = 'all';
+function formatDate(value) {
+  return new Date(value).toLocaleString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getRegions() {
+  return unique([...fallbackRegions, ...alerts.map((alert) => alert.region)]);
+}
+
+function getFilteredAlerts() {
+  return alerts.filter((alert) => state.region === 'all' || alert.region === state.region || alert.location === state.region);
+}
+
+function getFilteredShelters() {
+  return shelters.filter((shelter) => {
+    const cityMatches = state.city === 'all' || shelter.city === state.city;
+    return cityMatches;
+  });
+}
+
+function fillRegionFilter() {
+  const current = state.region;
+  elements.regionFilter.replaceChildren(createOption('all', 'Вся Україна'));
+  getRegions().forEach((region) => elements.regionFilter.append(createOption(region, region)));
+  elements.regionFilter.value = [...elements.regionFilter.options].some((option) => option.value === current) ? current : 'all';
+  state.region = elements.regionFilter.value;
+}
+
+function fillCityFilter() {
+  const current = state.city;
+  elements.cityFilter.replaceChildren(createOption('all', 'Усі райони Києва'));
+  unique(shelters.map((shelter) => shelter.city)).forEach((city) => elements.cityFilter.append(createOption(city, city)));
+  elements.cityFilter.value = [...elements.cityFilter.options].some((option) => option.value === current) ? current : 'all';
+  state.city = elements.cityFilter.value;
+}
+
+function setupControls() {
+  elements.regionFilter.addEventListener('change', () => {
+    state.region = elements.regionFilter.value;
     savePreferences();
     render();
   });
 
-  cityFilter.addEventListener('change', () => {
-    state.city = cityFilter.value;
+  elements.cityFilter.addEventListener('change', () => {
+    state.city = elements.cityFilter.value;
     savePreferences();
     render();
   });
 
-  sectionFilter.addEventListener('change', () => {
-    state.section = sectionFilter.value;
+  elements.sectionFilter.value = state.section;
+  elements.sectionFilter.addEventListener('change', () => {
+    state.section = elements.sectionFilter.value;
     savePreferences();
     renderSections();
   });
@@ -91,62 +140,59 @@ function setupFilters() {
     state.region = 'all';
     state.city = 'all';
     state.section = 'all';
-    regionFilter.value = 'all';
-    sectionFilter.value = 'all';
     savePreferences();
     render();
   });
 
-  const locateButton = document.querySelector('#locate-me');
-  if (locateButton) {
-    locateButton.addEventListener('click', findNearestShelter);
-  }
-}
-
-function getFilteredShelters() {
-  return shelters.filter((shelter) => {
-    const regionMatches = state.region === 'all' || shelter.region === state.region;
-    const cityMatches = state.city === 'all' || shelter.city === state.city;
-    return regionMatches && cityMatches;
+  document.querySelectorAll('[data-jump]').forEach((button) => {
+    button.addEventListener('click', () => {
+      document.querySelector(`#${button.dataset.jump}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   });
+
+  document.querySelector('#locate-me').addEventListener('click', findNearestShelter);
+  document.querySelector('#hero-locate').addEventListener('click', findNearestShelter);
 }
 
-function getFilteredAlerts() {
-  return alerts.filter((alert) => state.region === 'all' || alert.region === state.region);
-}
-
-function renderCityOptions() {
-  const source = state.region === 'all' ? shelters : shelters.filter((shelter) => shelter.region === state.region);
-  const cities = [...new Set(source.map((shelter) => shelter.city))];
-  cityFilter.replaceChildren(option('all', 'Всі міста'));
-  cities.forEach((city) => cityFilter.append(option(city, city)));
-  cityFilter.value = state.city;
+function setupMap() {
+  state.map = L.map('map', { scrollWheelZoom: false }).setView([50.4501, 30.5234], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(state.map);
 }
 
 function renderSummary() {
   const filteredShelters = getFilteredShelters();
   const filteredAlerts = getFilteredAlerts();
   const activeCount = filteredAlerts.filter((alert) => alert.active).length;
-  const capacity = filteredShelters.reduce((sum, shelter) => sum + shelter.capacity, 0);
+  const capacity = filteredShelters.reduce((sum, shelter) => sum + (Number(shelter.capacity) || 0), 0);
 
-  document.querySelector('#active-alerts-count').textContent = activeCount;
-  document.querySelector('#shelters-count').textContent = filteredShelters.length;
-  document.querySelector('#capacity-count').textContent = capacity.toLocaleString('uk-UA');
-  document.querySelector('#header-status').textContent = `${activeCount} активні тривоги`;
+  elements.activeAlertsCount.textContent = activeCount;
+  elements.sheltersCount.textContent = filteredShelters.length;
+  elements.capacityCount.textContent = capacity ? capacity.toLocaleString('uk-UA') : 'невідомо';
+  elements.headerStatus.textContent = activeCount > 0 ? `Зараз є тривоги: ${activeCount}` : 'Активних тривог не знайдено';
+  elements.statusSubtitle.textContent = activeCount > 0 ? 'Перевірте локації нижче' : 'За поточним фільтром спокійно';
+  elements.statusDot.className = `status-dot ${activeCount > 0 ? 'active' : 'clear'}`;
+  elements.lastUpdated.textContent = state.dataLoadedAt ? formatDate(state.dataLoadedAt) : 'очікуємо';
 }
 
 function renderAlerts() {
-  const list = document.querySelector('#alerts-list');
   const filtered = getFilteredAlerts();
-  list.innerHTML = filtered.map((alert) => `
+
+  if (!filtered.length) {
+    elements.alertsList.innerHTML = '<article class="notice"><div><h3>Немає повідомлень за фільтром</h3><p>Змініть регіон або перевірте стрічку пізніше.</p></div><span class="badge green">ОК</span></article>';
+    return;
+  }
+
+  elements.alertsList.innerHTML = filtered.map((alert) => `
     <article class="notice ${alert.active ? 'active' : ''}">
       <div>
         <h3>${alert.location || alert.region}</h3>
         <p>${alert.description}</p>
         <div class="meta">
-          <span><strong>Тип:</strong> ${alert.type || alert.alert_type}</span>
-          <span><strong>Початок:</strong> ${new Date(alert.start).toLocaleString('uk-UA')}</span>
-          ${alert.end ? `<span><strong>Завершення:</strong> ${new Date(alert.end).toLocaleString('uk-UA')}</span>` : ''}
+          <span><strong>Тип:</strong> ${alert.type || alert.alert_type || 'Сповіщення'}</span>
+          <span><strong>Час:</strong> ${formatDate(alert.start)}</span>
+          ${alert.end ? `<span><strong>Відбій:</strong> ${formatDate(alert.end)}</span>` : ''}
           ${alert.url ? `<span><a href="${alert.url}" target="_blank" rel="noreferrer">Джерело</a></span>` : ''}
         </div>
       </div>
@@ -155,48 +201,53 @@ function renderAlerts() {
   `).join('');
 }
 
+function badgeClass(type = '') {
+  if (/метро/i.test(type)) return 'blue';
+  if (/підзем/i.test(type)) return 'green';
+  return 'amber';
+}
+
 function renderShelters() {
   const filtered = getFilteredShelters();
-  const list = document.querySelector('#shelters-list');
-  list.innerHTML = filtered.map((shelter) => `
+
+  if (!filtered.length) {
+    elements.sheltersList.innerHTML = '<article class="shelter-card"><h3>Укриття не знайдено</h3><p>Спробуйте скинути фільтри або оновити сторінку.</p></article>';
+    return;
+  }
+
+  const ordered = state.userLocation
+    ? [...filtered].map((shelter) => ({ ...shelter, distance: distanceKm(state.userLocation, shelter) })).sort((a, b) => a.distance - b.distance)
+    : filtered;
+
+  elements.sheltersList.innerHTML = ordered.slice(0, 24).map((shelter) => `
     <article class="shelter-card">
-      <span class="badge ${shelter.type === 'Метро' ? 'blue' : shelter.type === 'Будівля' ? 'amber' : 'green'}">${shelter.type}</span>
+      <span class="badge ${badgeClass(shelter.type)}">${shelter.type || 'Укриття'}</span>
       <h3>${shelter.name}</h3>
-      <p>${shelter.description}</p>
+      <p>${shelter.description || 'Захисна споруда цивільного захисту.'}</p>
       <div class="meta">
-        <span>${shelter.address}, ${shelter.city}</span>
-        <span>${shelter.region}</span>
-        <span>Місткість: ${shelter.capacity} осіб</span>
+        <span>${shelter.address || 'Адресу уточнюйте на карті'}</span>
+        ${shelter.distance !== undefined ? `<span><strong>${shelter.distance.toFixed(2)} км від вас</strong></span>` : ''}
+        ${shelter.capacity ? `<span>Місткість: ${shelter.capacity} осіб</span>` : ''}
       </div>
     </article>
   `).join('');
 }
 
-function setupMap() {
-  state.map = L.map('map', { scrollWheelZoom: false }).setView([49.0, 31.0], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(state.map);
-}
-
 function renderMap() {
   const filtered = getFilteredShelters();
   state.markers.forEach((marker) => marker.remove());
-  state.markers = filtered.map((shelter) => {
-    return L.marker([shelter.lat, shelter.lng])
-      .addTo(state.map)
-      .bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address}<br>Місткість: ${shelter.capacity} осіб`);
-  });
+  state.markers = filtered.map((shelter) => L.marker([shelter.lat, shelter.lng])
+    .addTo(state.map)
+    .bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address || ''}<br>${shelter.type || 'Укриття'}`));
 
   if (filtered.length > 0) {
     const bounds = L.latLngBounds(filtered.map((shelter) => [shelter.lat, shelter.lng]));
-    state.map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
+    state.map.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
   }
 }
 
 function renderMedical() {
-  const list = document.querySelector('#medical-list');
-  list.innerHTML = medical.map((item, index) => `
+  elements.medicalList.innerHTML = medical.map((item, index) => `
     <article class="medical-item ${index === 0 ? 'open' : ''}">
       <button type="button" aria-expanded="${index === 0 ? 'true' : 'false'}">
         <span>${item.title}</span>
@@ -208,7 +259,7 @@ function renderMedical() {
     </article>
   `).join('');
 
-  list.querySelectorAll('.medical-item button').forEach((button) => {
+  elements.medicalList.querySelectorAll('.medical-item button').forEach((button) => {
     button.addEventListener('click', () => {
       const item = button.closest('.medical-item');
       item.classList.toggle('open');
@@ -218,23 +269,31 @@ function renderMedical() {
 }
 
 function renderUpdates() {
-  const list = document.querySelector('#updates-list');
-  list.innerHTML = updates.map((update) => `
+  elements.updatesList.innerHTML = updates.map((update) => `
     <article class="notice">
       <div>
-        <h3>${new Date(update.date).toLocaleString('uk-UA')}</h3>
+        <h3>${formatDate(update.date)}</h3>
         <p>${update.text}</p>
         ${update.url ? `<p><a href="${update.url}" target="_blank" rel="noreferrer">Відкрити джерело</a></p>` : ''}
       </div>
-      <span class="badge blue">Оновлення</span>
+      <span class="badge blue">Новини</span>
     </article>
   `).join('');
 }
 
 function renderSections() {
+  elements.sectionFilter.value = state.section;
   document.querySelectorAll('[data-section]').forEach((section) => {
     section.classList.toggle('hidden', state.section !== 'all' && section.dataset.section !== state.section);
   });
+}
+
+function renderNearest(nearest) {
+  elements.nearestPanel.classList.remove('hidden');
+  elements.nearestPanel.innerHTML = `
+    <strong>Найближче укриття: ${nearest.name}</strong>
+    <p>${nearest.address || 'Адресу уточнюйте на карті'} · ${nearest.distance.toFixed(2)} км від вас</p>
+  `;
 }
 
 function distanceKm(a, b) {
@@ -249,17 +308,18 @@ function distanceKm(a, b) {
 
 function findNearestShelter() {
   if (!navigator.geolocation) {
-    window.alert('Геолокація не підтримується цим браузером.');
+    window.alert('Ваш браузер не підтримує геолокацію.');
     return;
   }
 
   navigator.geolocation.getCurrentPosition((position) => {
-    const user = {
+    state.userLocation = {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
     };
+
     const nearest = shelters
-      .map((shelter) => ({ ...shelter, distance: distanceKm(user, shelter) }))
+      .map((shelter) => ({ ...shelter, distance: distanceKm(state.userLocation, shelter) }))
       .sort((a, b) => a.distance - b.distance)[0];
 
     if (!nearest) {
@@ -271,18 +331,22 @@ function findNearestShelter() {
       state.userMarker.remove();
     }
 
-    state.userMarker = L.circleMarker([user.lat, user.lng], {
+    state.userMarker = L.circleMarker([state.userLocation.lat, state.userLocation.lng], {
       radius: 8,
       color: '#2563eb',
       fillColor: '#2563eb',
-      fillOpacity: 0.85,
+      fillOpacity: 0.9,
     }).addTo(state.map).bindPopup('Ваша геолокація');
 
     state.map.setView([nearest.lat, nearest.lng], 15);
     L.popup()
       .setLatLng([nearest.lat, nearest.lng])
-      .setContent(`<strong>Найближче укриття</strong><br>${nearest.name}<br>${nearest.address}<br>${nearest.distance.toFixed(2)} км`)
+      .setContent(`<strong>${nearest.name}</strong><br>${nearest.address || ''}<br>${nearest.distance.toFixed(2)} км від вас`)
       .openOn(state.map);
+
+    renderNearest(nearest);
+    renderShelters();
+    document.querySelector('#shelters').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, () => {
     window.alert('Дозвольте доступ до геолокації, щоб знайти найближче укриття.');
   }, {
@@ -312,6 +376,7 @@ async function loadLiveData() {
 
   if (alertsResult.status === 'fulfilled' && Array.isArray(alertsResult.value.alerts)) {
     alerts = alertsResult.value.alerts;
+    elements.alertsSource.textContent = alertsResult.value.source?.includes('UkraineAlarmSignal') ? 'єТривога' : 'Telegram';
   }
 
   if (newsResult.status === 'fulfilled' && Array.isArray(newsResult.value.posts) && newsResult.value.posts.length) {
@@ -320,25 +385,27 @@ async function loadLiveData() {
       date: post.date,
       url: post.url,
     }));
-    renderUpdates();
   }
 
+  state.dataLoadedAt = new Date().toISOString();
+  fillRegionFilter();
+  fillCityFilter();
   render();
 }
 
 function render() {
-  regionFilter.value = state.region;
-  renderCityOptions();
+  fillRegionFilter();
+  fillCityFilter();
   renderSummary();
   renderAlerts();
   renderShelters();
   renderMap();
+  renderUpdates();
   renderSections();
 }
 
-setupFilters();
+setupControls();
 setupMap();
 renderMedical();
-renderUpdates();
 render();
 loadLiveData();
