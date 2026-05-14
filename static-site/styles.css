@@ -103,7 +103,7 @@ footer {
 
 .controls-band {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 18px;
   padding: 18px;
   border-radius: 10px;
@@ -126,6 +126,15 @@ button {
   background: white;
   color: var(--ink);
   font: inherit;
+}
+
+#locate-me {
+  padding: 0 12px;
+  color: white;
+  background: var(--blue);
+  border-color: var(--blue);
+  font-weight: 800;
+  cursor: pointer;
 }
 
 select {
