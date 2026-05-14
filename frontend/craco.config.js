@@ -1,6 +1,5 @@
 ﻿// craco.config.js
 const path = require("path");
-require("dotenv").config();
 
 const disableHotReload = process.env.DISABLE_HOT_RELOAD === "true";
 const enableHealthCheck = process.env.ENABLE_HEALTH_CHECK === "true";

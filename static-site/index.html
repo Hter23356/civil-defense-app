@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Система цивільного захисту: укриття, тривоги, перша допомога та оновлення." />
+    <title>Система цивільного захисту</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Civil Defense</p>
+        <h1>Система цивільного захисту</h1>
+        <p class="lead">Укриття, активні тривоги, перша допомога та важливі оновлення в одному місці.</p>
+      </div>
+      <div class="status-pill">
+        <span class="pulse"></span>
+        <span id="header-status">2 активні тривоги</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="controls-band" aria-label="Фільтри">
+        <div class="field">
+          <label for="region-filter">Регіон</label>
+          <select id="region-filter"></select>
+        </div>
+        <div class="field">
+          <label for="city-filter">Місто</label>
+          <select id="city-filter"></select>
+        </div>
+        <div class="field">
+          <label for="section-filter">Розділ</label>
+          <select id="section-filter">
+            <option value="all">Всі розділи</option>
+            <option value="alerts">Тривоги</option>
+            <option value="shelters">Укриття</option>
+            <option value="medical">Перша допомога</option>
+            <option value="updates">Оновлення</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="Коротка статистика">
+        <article>
+          <strong id="active-alerts-count">0</strong>
+          <span>активні тривоги</span>
+        </article>
+        <article>
+          <strong id="shelters-count">0</strong>
+          <span>укриттів у вибірці</span>
+        </article>
+        <article>
+          <strong id="capacity-count">0</strong>
+          <span>місць в укриттях</span>
+        </article>
+        <article>
+          <strong>103</strong>
+          <span>екстрена медична допомога</span>
+        </article>
+      </section>
+
+      <section class="content-section" data-section="alerts">
+        <div class="section-heading">
+          <h2>Тривоги</h2>
+          <p>Демо-сповіщення з фільтрацією за регіоном.</p>
+        </div>
+        <div id="alerts-list" class="list-stack"></div>
+      </section>
+
+      <section class="content-section" data-section="shelters">
+        <div class="section-heading">
+          <h2>Карта укриттів</h2>
+          <p>Оберіть регіон або місто, щоб звузити список.</p>
+        </div>
+        <div id="map"></div>
+        <div id="shelters-list" class="cards-grid"></div>
+      </section>
+
+      <section class="content-section" data-section="medical">
+        <div class="section-heading">
+          <h2>Перша допомога</h2>
+          <p>Короткі інструкції для найпоширеніших екстрених ситуацій.</p>
+        </div>
+        <div id="medical-list" class="accordion-list"></div>
+      </section>
+
+      <section class="content-section" data-section="updates">
+        <div class="section-heading">
+          <h2>Оновлення</h2>
+          <p>Інформаційна стрічка застосунку.</p>
+        </div>
+        <div id="updates-list" class="list-stack"></div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Демо-сайт працює без сервера та бази даних.</span>
+      <button id="reset-filters" type="button">Скинути фільтри</button>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

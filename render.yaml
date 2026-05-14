@@ -1,30 +1,11 @@
-﻿services:
+services:
   - type: web
-    name: civil-defense-api
-    env: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: MONGO_URL
-        sync: false
-      - key: DB_NAME
-        value: civil_defense
-      - key: CORS_ORIGINS
-        sync: false
-      - key: TELEGRAM_TOKEN
-        sync: false
-
-  - type: web
-    name: civil-defense-frontend
+    name: civil-defense-site
     env: static
-    rootDir: frontend
-    buildCommand: npm install --legacy-peer-deps && npm run build
-    staticPublishPath: build
+    rootDir: static-site
+    buildCommand: echo "No build required"
+    staticPublishPath: .
     routes:
       - type: rewrite
         source: "/*"
         destination: /index.html
-    envVars:
-      - key: REACT_APP_BACKEND_URL
-        sync: false
