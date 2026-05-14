@@ -19,7 +19,7 @@
     name: civil-defense-frontend
     env: static
     rootDir: frontend
-    buildCommand: yarn install && yarn build
+    buildCommand: npm install --legacy-peer-deps && npm run build
     staticPublishPath: build
     routes:
       - type: rewrite
