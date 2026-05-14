@@ -250,6 +250,7 @@ function renderShelters() {
         <span>${shelter.address || 'Адресу уточнюйте на карті'}</span>
         ${shelter.distance !== undefined ? `<span><strong>${shelter.distance.toFixed(2)} км від вас</strong></span>` : ''}
         ${shelter.capacity ? `<span>Місткість: ${shelter.capacity} осіб</span>` : ''}
+        ${shelter.phone ? `<span>Телефон: ${shelter.phone}</span>` : ''}
       </div>
       ${state.userLocation ? `<a class="small-route-action" href="${getGoogleRouteUrl(shelter)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>` : ''}
     </article>
@@ -261,7 +262,7 @@ function renderMap() {
   state.markers.forEach((marker) => marker.remove());
   state.markers = filtered.map((shelter) => L.marker([shelter.lat, shelter.lng])
     .addTo(state.map)
-    .bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address || ''}<br>${shelter.type || 'Укриття'}${state.userLocation ? `<br><a href="${getGoogleRouteUrl(shelter)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>` : ''}`));
+    .bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address || ''}<br>${shelter.type || 'Укриття'}${shelter.phone ? `<br>${shelter.phone}` : ''}${state.userLocation ? `<br><a href="${getGoogleRouteUrl(shelter)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>` : ''}`));
 
   if (filtered.length > 0) {
     const bounds = L.latLngBounds(filtered.map((shelter) => [shelter.lat, shelter.lng]));
@@ -348,6 +349,7 @@ function renderNearest(nearest) {
   elements.nearestPanel.innerHTML = `
     <strong>Найближче укриття: ${nearest.name}</strong>
     <p>${nearest.address || 'Адресу уточнюйте на карті'} · ${nearest.distance.toFixed(2)} км від вас</p>
+    ${nearest.phone ? `<p>Телефон: ${nearest.phone}</p>` : ''}
     <a class="route-action" href="${getGoogleRouteUrl(nearest)}" target="_blank" rel="noreferrer">Прокласти маршрут у Google Maps</a>
   `;
 }
@@ -397,7 +399,7 @@ function findNearestShelter() {
     state.map.setView([nearest.lat, nearest.lng], 15);
     L.popup()
       .setLatLng([nearest.lat, nearest.lng])
-      .setContent(`<strong>${nearest.name}</strong><br>${nearest.address || ''}<br>${nearest.distance.toFixed(2)} км від вас<br><a href="${getGoogleRouteUrl(nearest)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>`)
+      .setContent(`<strong>${nearest.name}</strong><br>${nearest.address || ''}<br>${nearest.distance.toFixed(2)} км від вас${nearest.phone ? `<br>${nearest.phone}` : ''}<br><a href="${getGoogleRouteUrl(nearest)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>`)
       .openOn(state.map);
 
     renderNearest(nearest);

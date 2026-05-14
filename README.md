@@ -1,76 +1,52 @@
-﻿# Civil Defense App
+# Civil Defense App
 
-Full-stack web app for civil protection information: active alerts, shelter map, first-aid instructions, and public update messages.
+Static civil defense dashboard for Kyiv: active alert messages, Air Force updates, first-aid guidance, and a shelter map with geolocation and Google Maps walking routes.
 
-## Tech Stack
+## Current Version
 
-- Backend: FastAPI, MongoDB, Motor, Pydantic
-- Frontend: React, CRACO, Tailwind CSS, Radix UI, Leaflet
+- Main site: `static-site`
+- Cloudflare Pages Functions: `functions/api`
+- Hosting target: Cloudflare Pages
+- No MongoDB, paid backend, or extra server required
 
-## Local Setup
+## Data Sources
 
-### Backend
+- Alerts: public Telegram web feed from `t.me/UkraineAlarmSignal`
+- News: public Telegram web feed from `t.me/kpszsu`
+- Kyiv shelters: official Kyiv GIS ArcGIS GeoJSON layer, with Kyiv Open Data as a fallback
 
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-uvicorn server:app --host 0.0.0.0 --port 8000 --reload
-```
+## Cloudflare Pages Settings
 
-Required backend variables:
-
-```env
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=civil_defense
-CORS_ORIGINS=http://localhost:3000
-TELEGRAM_TOKEN=
-```
-
-### Frontend
-
-```powershell
-cd frontend
-yarn install
-Copy-Item .env.example .env
-yarn start
-```
-
-Required frontend variables:
-
-```env
-REACT_APP_BACKEND_URL=http://localhost:8000
-```
-
-After both apps are running, open `http://localhost:3000` and use the sample-data button once to seed demo content.
-
-## Hosting
-
-A simple deployment option is Render:
-
-1. Create a MongoDB Atlas database and copy the connection string.
-2. Deploy the backend as a Python web service from `backend`.
-3. Set backend environment variables: `MONGO_URL`, `DB_NAME`, `CORS_ORIGINS`, and optional `TELEGRAM_TOKEN`.
-4. Deploy the frontend as a static site from `frontend`.
-5. Set `REACT_APP_BACKEND_URL` to the public backend URL.
-6. Set backend `CORS_ORIGINS` to the public frontend URL.
-
-Suggested backend start command:
-
-```bash
-uvicorn server:app --host 0.0.0.0 --port $PORT
-```
-
-Suggested frontend build command:
-
-```bash
-yarn install && yarn build
-```
-
-Suggested frontend publish directory:
+Use these values when deploying the GitHub repository:
 
 ```text
-build
+Framework preset: None
+Build command:
+Build output directory: static-site
+Root directory:
+Production branch: main
 ```
+
+Leave `Build command` and `Root directory` empty.
+
+## Local Preview
+
+For a quick static preview, open:
+
+```text
+static-site/index.html
+```
+
+The live `/api/*` functions run on Cloudflare Pages after deployment.
+
+## Deploy Updates
+
+After changing files, run:
+
+```powershell
+git add .
+git commit -m "Update civil defense site"
+git push
+```
+
+Cloudflare Pages will automatically rebuild the site from the `main` branch.
