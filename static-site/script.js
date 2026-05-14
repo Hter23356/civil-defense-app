@@ -141,12 +141,13 @@ function renderAlerts() {
   list.innerHTML = filtered.map((alert) => `
     <article class="notice ${alert.active ? 'active' : ''}">
       <div>
-        <h3>${alert.region}</h3>
+        <h3>${alert.location || alert.region}</h3>
         <p>${alert.description}</p>
         <div class="meta">
-          <span><strong>Тип:</strong> ${alert.type}</span>
+          <span><strong>Тип:</strong> ${alert.type || alert.alert_type}</span>
           <span><strong>Початок:</strong> ${new Date(alert.start).toLocaleString('uk-UA')}</span>
           ${alert.end ? `<span><strong>Завершення:</strong> ${new Date(alert.end).toLocaleString('uk-UA')}</span>` : ''}
+          ${alert.url ? `<span><a href="${alert.url}" target="_blank" rel="noreferrer">Джерело</a></span>` : ''}
         </div>
       </div>
       <span class="badge ${alert.active ? 'red' : 'green'}">${alert.active ? 'Активна' : 'Завершена'}</span>

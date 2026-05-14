@@ -7,13 +7,14 @@ const json = (data, init = {}) => new Response(JSON.stringify(data), {
   },
 });
 
-const clean = (value) => value
+const clean = (value = '') => value
   .replace(/<br\s*\/?>/gi, '\n')
   .replace(/<[^>]+>/g, '')
   .replace(/&quot;/g, '"')
   .replace(/&amp;/g, '&')
   .replace(/&#33;/g, '!')
   .replace(/&#39;/g, "'")
+  .replace(/&nbsp;/g, ' ')
   .replace(/\n{3,}/g, '\n\n')
   .trim();
 
@@ -36,7 +37,7 @@ export async function onRequestGet() {
 
   const html = await response.text();
   const messageBlocks = [...html.matchAll(/<div class="tgme_widget_message_wrap[\s\S]*?<\/time>[\s\S]*?<\/div>\s*<\/div>/g)]
-    .slice(-8)
+    .slice(-12)
     .reverse();
 
   const posts = messageBlocks.map((match) => {
