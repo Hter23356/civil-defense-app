@@ -15,7 +15,7 @@ let shelters = [
 ];
 
 let alerts = [
-  { region: 'Київ', location: 'Київ', type: 'Повітряна тривога', active: true, start: new Date().toISOString(), description: 'Очікуємо актуальні дані з каналу єТривога.', url: 'https://t.me/UkraineAlarmSignal' },
+  { region: 'Київ', location: 'Київ', type: 'Оновлення', active: false, start: new Date().toISOString(), description: 'Завантажуємо актуальні сповіщення з каналу єТривога.', url: 'https://t.me/UkraineAlarmSignal' },
 ];
 
 const medical = [
@@ -57,6 +57,10 @@ const elements = {
   lastUpdated: document.querySelector('#last-updated'),
   alertsSource: document.querySelector('#alerts-source'),
   nearestPanel: document.querySelector('#nearest-panel'),
+  alertModal: document.querySelector('#alert-modal'),
+  closeAlertModal: document.querySelector('#close-alert-modal'),
+  modalLocate: document.querySelector('#modal-locate'),
+  modalShowAlerts: document.querySelector('#modal-show-alerts'),
 };
 
 function savePreferences() {
@@ -152,6 +156,24 @@ function setupControls() {
 
   document.querySelector('#locate-me').addEventListener('click', findNearestShelter);
   document.querySelector('#hero-locate').addEventListener('click', findNearestShelter);
+  elements.modalLocate.addEventListener('click', () => {
+    hideAlertModal();
+    findNearestShelter();
+  });
+  elements.modalShowAlerts.addEventListener('click', () => {
+    hideAlertModal();
+    document.querySelector('#alerts').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  elements.closeAlertModal.addEventListener('click', () => {
+    sessionStorage.setItem('civil-defense-alert-modal-dismissed', 'true');
+    hideAlertModal();
+  });
+  elements.alertModal.addEventListener('click', (event) => {
+    if (event.target === elements.alertModal) {
+      sessionStorage.setItem('civil-defense-alert-modal-dismissed', 'true');
+      hideAlertModal();
+    }
+  });
 }
 
 function setupMap() {
@@ -229,6 +251,7 @@ function renderShelters() {
         ${shelter.distance !== undefined ? `<span><strong>${shelter.distance.toFixed(2)} км від вас</strong></span>` : ''}
         ${shelter.capacity ? `<span>Місткість: ${shelter.capacity} осіб</span>` : ''}
       </div>
+      ${state.userLocation ? `<a class="small-route-action" href="${getGoogleRouteUrl(shelter)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>` : ''}
     </article>
   `).join('');
 }
@@ -238,7 +261,7 @@ function renderMap() {
   state.markers.forEach((marker) => marker.remove());
   state.markers = filtered.map((shelter) => L.marker([shelter.lat, shelter.lng])
     .addTo(state.map)
-    .bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address || ''}<br>${shelter.type || 'Укриття'}`));
+    .bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address || ''}<br>${shelter.type || 'Укриття'}${state.userLocation ? `<br><a href="${getGoogleRouteUrl(shelter)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>` : ''}`));
 
   if (filtered.length > 0) {
     const bounds = L.latLngBounds(filtered.map((shelter) => [shelter.lat, shelter.lng]));
@@ -288,11 +311,44 @@ function renderSections() {
   });
 }
 
+function getGoogleRouteUrl(shelter) {
+  const destination = `${shelter.lat},${shelter.lng}`;
+  const origin = state.userLocation ? `${state.userLocation.lat},${state.userLocation.lng}` : '';
+  const params = new URLSearchParams({
+    api: '1',
+    destination,
+    travelmode: 'walking',
+  });
+
+  if (origin) {
+    params.set('origin', origin);
+  }
+
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+function showAlertModalIfNeeded(activeCount) {
+  if (activeCount <= 0) {
+    return;
+  }
+
+  if (sessionStorage.getItem('civil-defense-alert-modal-dismissed') === 'true') {
+    return;
+  }
+
+  elements.alertModal.classList.remove('hidden');
+}
+
+function hideAlertModal() {
+  elements.alertModal.classList.add('hidden');
+}
+
 function renderNearest(nearest) {
   elements.nearestPanel.classList.remove('hidden');
   elements.nearestPanel.innerHTML = `
     <strong>Найближче укриття: ${nearest.name}</strong>
     <p>${nearest.address || 'Адресу уточнюйте на карті'} · ${nearest.distance.toFixed(2)} км від вас</p>
+    <a class="route-action" href="${getGoogleRouteUrl(nearest)}" target="_blank" rel="noreferrer">Прокласти маршрут у Google Maps</a>
   `;
 }
 
@@ -341,7 +397,7 @@ function findNearestShelter() {
     state.map.setView([nearest.lat, nearest.lng], 15);
     L.popup()
       .setLatLng([nearest.lat, nearest.lng])
-      .setContent(`<strong>${nearest.name}</strong><br>${nearest.address || ''}<br>${nearest.distance.toFixed(2)} км від вас`)
+      .setContent(`<strong>${nearest.name}</strong><br>${nearest.address || ''}<br>${nearest.distance.toFixed(2)} км від вас<br><a href="${getGoogleRouteUrl(nearest)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>`)
       .openOn(state.map);
 
     renderNearest(nearest);
@@ -402,6 +458,7 @@ function render() {
   renderMap();
   renderUpdates();
   renderSections();
+  showAlertModalIfNeeded(getFilteredAlerts().filter((alert) => alert.active).length);
 }
 
 setupControls();

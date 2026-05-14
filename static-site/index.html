@@ -162,6 +162,19 @@
       <button id="reset-filters" type="button">Скинути фільтри</button>
     </footer>
 
+    <div id="alert-modal" class="alert-modal hidden" role="dialog" aria-modal="true" aria-labelledby="alert-modal-title">
+      <div class="alert-modal-card">
+        <button id="close-alert-modal" class="modal-close" type="button" aria-label="Закрити">×</button>
+        <span class="badge red">Активна тривога</span>
+        <h2 id="alert-modal-title">Перейдіть до найближчого укриття</h2>
+        <p id="alert-modal-text">На сайті є активні сповіщення. Дозвольте геолокацію, щоб побудувати маршрут до найближчого укриття.</p>
+        <div class="modal-actions">
+          <button id="modal-locate" class="primary-action" type="button">Знайти укриття і маршрут</button>
+          <button id="modal-show-alerts" class="secondary-action" type="button">Переглянути тривоги</button>
+        </div>
+      </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="./script.js"></script>
   </body>
