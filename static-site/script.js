@@ -93,6 +93,10 @@ const state = {
   map: null,
   alertMap: null,
   alertRegionLayer: null,
+  shelterLayer: null,
+  shelterRenderer: null,
+  mapViewKey: '',
+  mapRenderToken: 0,
   markers: [],
   userMarker: null,
   userLocation: null,
@@ -277,6 +281,8 @@ function setupMap() {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(state.map);
+  state.shelterRenderer = L.canvas({ padding: 0.5 });
+  state.shelterLayer = L.layerGroup().addTo(state.map);
 
   state.alertMap = L.map('ukraine-alert-map', {
     attributionControl: false,
@@ -417,15 +423,52 @@ function renderShelters() {
 
 function renderMap() {
   const filtered = getFilteredShelters();
-  state.markers.forEach((marker) => marker.remove());
-  state.markers = filtered.map((shelter) => L.marker([shelter.lat, shelter.lng])
-    .addTo(state.map)
-    .bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address || ''}<br>${shelter.type || 'Укриття'}${state.userLocation ? `<br><a href="${getGoogleRouteUrl(shelter)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>` : ''}`));
+  const token = state.mapRenderToken + 1;
+  state.mapRenderToken = token;
+  state.shelterLayer.clearLayers();
+  state.markers = [];
+
+  const routeSuffix = (shelter) => state.userLocation
+    ? `<br><a href="${getGoogleRouteUrl(shelter)}" target="_blank" rel="noreferrer">Маршрут у Google Maps</a>`
+    : '';
 
   if (filtered.length > 0) {
-    const bounds = L.latLngBounds(filtered.map((shelter) => [shelter.lat, shelter.lng]));
-    state.map.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+    const viewKey = `${state.city}|${filtered.length}|${state.userLocation ? 'geo' : 'no-geo'}`;
+    if (state.mapViewKey !== viewKey) {
+      state.mapViewKey = viewKey;
+      const bounds = L.latLngBounds(filtered.map((shelter) => [shelter.lat, shelter.lng]));
+      state.map.fitBounds(bounds, { padding: [32, 32], maxZoom: 14 });
+    }
   }
+
+  let index = 0;
+  const renderChunk = () => {
+    if (state.mapRenderToken !== token) {
+      return;
+    }
+
+    const end = Math.min(index + 500, filtered.length);
+    for (; index < end; index += 1) {
+      const shelter = filtered[index];
+      const marker = L.circleMarker([shelter.lat, shelter.lng], {
+        renderer: state.shelterRenderer,
+        radius: 4,
+        weight: 1,
+        color: '#1d4ed8',
+        fillColor: '#2563eb',
+        fillOpacity: 0.68,
+      }).bindPopup(`<strong>${shelter.name}</strong><br>${shelter.address || ''}<br>${shelter.type || 'Укриття'}${routeSuffix(shelter)}`);
+
+      marker.addTo(state.shelterLayer);
+      state.markers.push(marker);
+    }
+
+    if (index < filtered.length) {
+      requestAnimationFrame(renderChunk);
+    }
+  };
+
+  requestAnimationFrame(renderChunk);
 }
 
 function renderMedical() {
@@ -680,11 +723,10 @@ async function loadRegions() {
 }
 
 async function loadLiveData() {
-  const [sheltersResult, alertsResult, newsResult, regionsResult] = await Promise.allSettled([
+  const [sheltersResult, alertsResult, newsResult] = await Promise.allSettled([
     fetchJson('/api/shelters'),
     fetchJson('/api/alerts'),
     fetchJson('/api/news'),
-    loadRegions(),
   ]);
 
   if (sheltersResult.status === 'fulfilled' && Array.isArray(sheltersResult.value.shelters)) {
@@ -704,16 +746,25 @@ async function loadLiveData() {
     }));
   }
 
-  if (regionsResult.status === 'fulfilled' && regionsResult.value?.features?.length) {
-    regionsGeoJson = regionsResult.value;
-  }
-
   state.dataLoadedAt = new Date().toISOString();
   fillRegionFilter();
   fillCityFilter();
   render();
   if (state.userRegion) {
     showAlertModalForRegion(state.userRegion);
+  }
+  loadAlertMapData();
+}
+
+async function loadAlertMapData() {
+  try {
+    const regions = await loadRegions();
+    if (regions?.features?.length) {
+      regionsGeoJson = regions;
+      renderAlertMap();
+    }
+  } catch (error) {
+    elements.alertMapSummary.textContent = 'Карту областей тимчасово не вдалося завантажити.';
   }
 }
 
