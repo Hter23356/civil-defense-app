@@ -86,6 +86,8 @@ let updates = [
   { text: 'Останні новини Повітряних Сил завантажуються.', date: new Date().toISOString(), url: 'https://t.me/kpszsu' },
 ];
 
+const REALTIME_REFRESH_INTERVAL_MS = 30000;
+
 const state = {
   region: localStorage.getItem('civil-defense-region') || 'all',
   city: localStorage.getItem('civil-defense-city') || 'all',
@@ -102,6 +104,8 @@ const state = {
   userLocation: null,
   userRegion: localStorage.getItem('civil-defense-user-region') || '',
   dataLoadedAt: null,
+  isRefreshing: false,
+  refreshTimer: null,
 };
 
 const elements = {
@@ -701,8 +705,10 @@ function renderNearestShelterFromLocation() {
   document.querySelector('#shelters').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url);
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, {
+    cache: options.revalidate ? 'no-cache' : 'default',
+  });
   if (!response.ok) {
     throw new Error(`${url} returned ${response.status}`);
   }
@@ -722,17 +728,7 @@ async function loadRegions() {
   return fetchJson('./data/ukraine-regions.geojson');
 }
 
-async function loadLiveData() {
-  const [sheltersResult, alertsResult, newsResult] = await Promise.allSettled([
-    fetchJson('/api/shelters'),
-    fetchJson('/api/alerts'),
-    fetchJson('/api/news'),
-  ]);
-
-  if (sheltersResult.status === 'fulfilled' && Array.isArray(sheltersResult.value.shelters)) {
-    shelters = sheltersResult.value.shelters;
-  }
-
+function applyRealtimeData(alertsResult, newsResult) {
   if (alertsResult.status === 'fulfilled' && Array.isArray(alertsResult.value.alerts)) {
     alerts = alertsResult.value.alerts;
     elements.alertsSource.textContent = alertsResult.value.source?.includes('UkraineAlarmSignal') ? 'єТривога' : 'Telegram';
@@ -747,6 +743,20 @@ async function loadLiveData() {
   }
 
   state.dataLoadedAt = new Date().toISOString();
+}
+
+async function loadLiveData() {
+  const [sheltersResult, alertsResult, newsResult] = await Promise.allSettled([
+    fetchJson('/api/shelters'),
+    fetchJson('/api/alerts'),
+    fetchJson('/api/news'),
+  ]);
+
+  if (sheltersResult.status === 'fulfilled' && Array.isArray(sheltersResult.value.shelters)) {
+    shelters = sheltersResult.value.shelters;
+  }
+
+  applyRealtimeData(alertsResult, newsResult);
   fillRegionFilter();
   fillCityFilter();
   render();
@@ -754,6 +764,7 @@ async function loadLiveData() {
     showAlertModalForRegion(state.userRegion);
   }
   loadAlertMapData();
+  setupRealtimeUpdates();
 }
 
 async function loadAlertMapData() {
@@ -766,6 +777,47 @@ async function loadAlertMapData() {
   } catch (error) {
     elements.alertMapSummary.textContent = 'Карту областей тимчасово не вдалося завантажити.';
   }
+}
+
+async function refreshRealtimeData() {
+  if (state.isRefreshing || document.hidden) {
+    return;
+  }
+
+  state.isRefreshing = true;
+  try {
+    const [alertsResult, newsResult] = await Promise.allSettled([
+      fetchJson('/api/alerts', { revalidate: true }),
+      fetchJson('/api/news', { revalidate: true }),
+    ]);
+
+    applyRealtimeData(alertsResult, newsResult);
+    fillRegionFilter();
+    renderSummary();
+    renderAlerts();
+    renderAlertMap();
+    renderUpdates();
+    renderSections();
+
+    if (state.userRegion) {
+      showAlertModalForRegion(state.userRegion);
+    }
+  } finally {
+    state.isRefreshing = false;
+  }
+}
+
+function setupRealtimeUpdates() {
+  if (state.refreshTimer) {
+    return;
+  }
+
+  state.refreshTimer = window.setInterval(refreshRealtimeData, REALTIME_REFRESH_INTERVAL_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      refreshRealtimeData();
+    }
+  });
 }
 
 function render() {
