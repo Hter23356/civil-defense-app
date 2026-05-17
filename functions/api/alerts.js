@@ -21,7 +21,11 @@ const clean = (value = '') => value
 const getRegion = (location = '') => {
   const match = location.match(/\(([^)]+)\)/);
   if (match) {
-    return match[1].replace(/\s*обл\.?\s*/i, ' область').trim();
+    return match[1].split(',').pop().replace(/\s*обл\.?\s*/i, ' область').trim();
+  }
+  const explicitRegion = location.match(/([А-ЯІЇЄҐ][а-яіїєґ'’.-]+(?:\s+[А-ЯІЇЄҐ][а-яіїєґ'’.-]+)?\s+(?:обл\.?|область))/i);
+  if (explicitRegion) {
+    return explicitRegion[1].replace(/\s*обл\.?\s*/i, ' область').trim();
   }
   if (/Київ/i.test(location)) return 'Київ';
   return location.split(',')[0].trim() || 'Україна';

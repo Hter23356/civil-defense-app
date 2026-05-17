@@ -279,7 +279,7 @@ h1 {
 
 .toolbar {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr 1fr auto;
   gap: 14px;
   align-items: end;
   margin-top: 18px;
@@ -381,19 +381,24 @@ h1 {
 
 #ukraine-alert-map {
   width: 100%;
-  min-height: 460px;
+  min-height: 480px;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid #1f2937;
   border-radius: 10px;
-  background: #eef4ff;
+  background: #07111f;
+}
+
+#ukraine-alert-map .leaflet-tile-pane {
+  filter: saturate(0.55) brightness(0.42) contrast(1.15);
 }
 
 .alert-map-panel {
   align-self: stretch;
   padding: 18px;
-  border: 1px solid var(--line);
+  border: 1px solid #1f2937;
   border-radius: 10px;
-  background: var(--surface-soft);
+  color: #e5edf8;
+  background: linear-gradient(180deg, #101827, #07111f);
 }
 
 .alert-map-panel h3 {
@@ -402,12 +407,30 @@ h1 {
 }
 
 .alert-map-panel p {
-  color: var(--muted);
+  color: #b6c4d6;
   line-height: 1.5;
 }
 
+.alert-map-panel .secondary-action {
+  color: #e5edf8;
+  background: #172033;
+  border-color: #334155;
+}
+
 .leaflet-interactive.alert-region-active {
-  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.35));
+  animation: alertPulse 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 9px rgba(248, 113, 113, 0.72));
+}
+
+@keyframes alertPulse {
+  0%, 100% {
+    fill-opacity: 0.78;
+    stroke-opacity: 0.95;
+  }
+  50% {
+    fill-opacity: 0.98;
+    stroke-opacity: 1;
+  }
 }
 
 .notice,

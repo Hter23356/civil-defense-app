@@ -7,13 +7,11 @@ const json = (data, init = {}) => new Response(JSON.stringify(data), {
   },
 });
 
-const REGIONS_URL = 'https://services6.arcgis.com/ShS5lxe02g5rZbkL/arcgis/rest/services/UKR_Oblast_Boundaries/FeatureServer/1/query?where=1%3D1&outFields=ADM1_UA,ADM1_EN,ADM1_PCODE&returnGeometry=true&f=geojson&outSR=4326&geometryPrecision=3';
+const REGIONS_URL = 'https://services6.arcgis.com/ShS5lxe02g5rZbkL/arcgis/rest/services/UKR_Oblast_Boundaries/FeatureServer/1/query?where=1%3D1&outFields=ADM1_UA,ADM1_EN,ADM1_PCODE&returnGeometry=true&f=geojson&outSR=4326&geometryPrecision=2';
 
 export async function onRequestGet() {
   const response = await fetch(REGIONS_URL, {
-    headers: {
-      accept: 'application/geo+json, application/json',
-    },
+    headers: { accept: 'application/geo+json, application/json' },
   });
 
   if (!response.ok) {
